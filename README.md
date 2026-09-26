@@ -6,7 +6,7 @@ Recovering file type may require additional consideration, but I will try.
 
 Initial idea of how it will work: 
 
-pycrypt "file-name" "output file name" 
--> a file with the output file name which is encrypted 
-pycrypt -decrypt "file-name" 
--> A decrypted file 
+pycrypt "file-name" "output file name" <br>
+-> a file with the output file name which is encrypted <br>
+pycrypt -decrypt "file-name" <br>
+-> A decrypted file <br>
