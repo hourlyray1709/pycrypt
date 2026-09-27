@@ -18,20 +18,32 @@ class PycryptCore:
         file.write(key)
         file.close() 
 
-    def encrypt(self, filepath, output_name=None): 
+    def encrypt(self, filepath, output_name=None, stream=False, chunksize=1000000): 
         key_path = Path("user/key.txt")
         file_path = Path(filepath)
         extension = filepath.split(".")[-1]
 
+        if not stream: 
+            chunksize = None 
+
         if key_path.exists(): 
             if file_path.exists(): 
-                key = open("user/key.txt", "rb").read()
-                data = open(filepath, "rb").read()
+                keyfile = open("user/key.txt", "rb")
+                datafile = open(filepath, "rb")
+                key = keyfile.read()
+                data = datafile.read(chunksize) 
                 f = Fernet(key)
                 encrypted_data = f.encrypt(data)
-
-                path = self.write(encrypted_data, extension=f".{extension}")
-                return path 
+                if stream: 
+                    while data:
+                        path, encrypted_file = self.stream_write(encrypted_data, extension=f".{extension}", pathname=filepath)
+                        data = datafile.read(chunksize) 
+                        encrypted_data = f.encrypt(data)
+                    encrypted_file.close() 
+                    return path 
+                else: 
+                    path = self.write(encrypted_data, extension=f".{extension}", pathname = filepath)
+                    return path 
             else: 
                 print("No such file.")
         else: 
@@ -57,8 +69,6 @@ class PycryptCore:
         data = f.decrypt(encrypted_data) 
         self.write(data, extension=f".{extension}")
 
-
-
     # UTILITY FUNCTIONS 
     def get_unique_path(self, name): 
         i = 0 
@@ -78,6 +88,8 @@ class PycryptCore:
         if pathname == None:
             current_time = datetime.now().strftime("%H %M %S")
             pathname = f"result generated at {current_time}{extension}"
+        else: 
+            pathname = pathname.split("/")[-1]
 
         writeback_path = f"outputs/{pathname}"
         writeback_path = self.get_unique_path(writeback_path)
@@ -86,3 +98,17 @@ class PycryptCore:
         print(f"Wrote {written} to {writeback_path}")
         writeback_file.close()      
         return writeback_path
+
+    def stream_write(self, data, pathname=None, extension=""): 
+        if pathname == None:
+            current_time = datetime.now().strftime("%H %M %S")
+            pathname = f"result generated at {current_time}{extension}"
+        else: 
+            pathname = pathname.split("/")[-1]
+
+        writeback_path = f"outputs/{pathname}"
+        writeback_path = self.get_unique_path(writeback_path)
+        writeback_file = open(writeback_path, "ab")
+        written = writeback_file.write(data)
+        print(f"Wrote {written} to {writeback_path}")      
+        return writeback_path, writeback_file    
